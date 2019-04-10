@@ -3790,20 +3790,36 @@ cdef class RandomGenerator:
         array([100,   0])
 
         """
-
         cdef np.npy_intp d, i, sz, offset
-        cdef np.ndarray parr, mnarr, on, temp_arr
+        cdef np.ndarray p_arr, mnarr, on, temp_arr
+        cdef bint bad_pvals
+        cdef double tol, pval_sum = -1.0
         cdef double *pix
+        cdef float *pix_f
         cdef int64_t *mnix
         cdef int64_t ni
         cdef np.broadcast it
 
         d = len(pvals)
         on = <np.ndarray>np.PyArray_FROM_OTF(n, np.NPY_INT64, np.NPY_ALIGNED)
-        parr = <np.ndarray>np.PyArray_FROM_OTF(pvals, np.NPY_DOUBLE, np.NPY_ALIGNED)
-        pix = <double*>np.PyArray_DATA(parr)
-        check_array_constraint(parr, 'pvals', CONS_BOUNDED_0_1)
-        if kahan_sum(pix, d-1) > (1.0 + 1e-12):
+        # TODO: Needs review
+        # Special case float32 to avoid round-off, gh 8317
+        if np.PyArray_CheckExact(pvals):
+            p_arr = <np.ndarray>pvals
+            if np.PyArray_TYPE(p_arr) == np.NPY_FLOAT:
+                p_arr = <np.ndarray>np.PyArray_FROM_OTF(pvals, np.NPY_FLOAT, np.NPY_ALIGNED)
+                pix_f = <float*>np.PyArray_DATA(p_arr)
+                pval_sum = kahan_sum(pix_f, d-1)
+                # np.double(np.nextafter(np.float32(1), np.float32(2)))
+                tol = 0.0000001192092896
+        # TODO: Needs review
+        p_arr = <np.ndarray>np.PyArray_FROM_OTF(pvals, np.NPY_DOUBLE, np.NPY_ALIGNED)
+        check_array_constraint(p_arr, 'pvals', CONS_BOUNDED_0_1)
+        pix = <double*>np.PyArray_DATA(p_arr)
+        if pval_sum < 0:
+            pval_sum = kahan_sum(pix, d-1)
+            tol = 1e-12
+        if  pval_sum > 1.0 + tol:
             raise ValueError("sum(pvals[:-1]) > 1.0")
 
         if np.PyArray_NDIM(on) != 0: # vector

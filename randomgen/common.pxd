@@ -8,6 +8,7 @@ from libc.math cimport sqrt
 from randomgen.distributions cimport brng_t
 import numpy as np
 cimport numpy as np
+cimport cython
 
 cdef double POISSON_LAM_MAX
 cdef uint64_t MAXSIZE
@@ -61,7 +62,7 @@ ctypedef uint32_t (*random_uint_1_i_32)(brng_t *state, uint32_t a) nogil
 ctypedef int32_t (*random_int_2_i_32)(brng_t *state, int32_t a, int32_t b) nogil
 ctypedef int64_t (*random_int_2_i)(brng_t *state, int64_t a, int64_t b) nogil
 
-cdef double kahan_sum(double *darr, np.npy_intp n)
+cdef double kahan_sum(cython.floating *darr, np.npy_intp n)
 
 cdef inline double uint64_to_double(uint64_t rnd) nogil:
     return (rnd >> 11) * (1.0 / 9007199254740992.0)

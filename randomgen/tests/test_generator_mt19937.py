@@ -96,6 +96,14 @@ class TestMultinomial(object):
         assert_raises(ValueError, random.multinomial, -1, [0.8, 0.2])
         assert_raises(ValueError, random.multinomial, [-1] * 10, [0.8, 0.2])
 
+    def test_32bit_pvals(self):
+        pval = np.array([9.9e-01, 9.9e-01, 1.0e-09, 1.0e-09, 1.0e-09, 1.0e-09,
+                         1.0e-09, 1.0e-09, 1.0e-09, 1.0e-09], dtype=np.float32)
+        pval = pval / pval.sum()
+        actual = random.multinomial(1, pval)
+        assert actual.shape == (10,)
+        assert actual.dtype == np.int64
+
 
 class TestSetState(object):
     def setup(self):

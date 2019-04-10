@@ -7,6 +7,7 @@ import numpy as np
 
 from cpython cimport PyFloat_AsDouble
 cimport numpy as np
+cimport cython
 
 from randomgen.common cimport *
 
@@ -160,8 +161,9 @@ cdef object prepare_ctypes(brng_t *brng):
                         ctypes.c_void_p(<uintptr_t>brng))
     return _ctypes
 
-cdef double kahan_sum(double *darr, np.npy_intp n):
-    cdef double c, y, t, sum
+
+cdef double kahan_sum(cython.floating *darr, np.npy_intp n):
+    cdef cython.floating  c, y, t, sum
     cdef np.npy_intp i
     sum = darr[0]
     c = 0.0
